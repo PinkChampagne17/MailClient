@@ -18,9 +18,9 @@ import javax.mail.internet.MimeUtility;
 public class SendMail {
     private String smtpHost = "";  //smtp服务器
     private String fromAddr = "";  //发件人地址
-    private String toAddr = "";    //收件人地址
-    private String File = ""; //附件地址
-    private String fileName = ""; //附件名称
+    private String[] toAddrs = new String[0];    //收件人地址
+    private String[] File = new String[0]; //附件地址
+    private String[] fileName = new String[0]; //附件名称
     private String userName = "";  //用户名
     private String userPass = "";   //密码
     private String subject = ""; //邮件标题
@@ -28,16 +28,16 @@ public class SendMail {
     
     public SendMail(String smtpHost, 
             String fromAddr, 
-            String toAddr, 
-            String file,
-            String fileName, 
+            String[] toAddr, 
+            String[] file,
+            String[] fileName, 
             String userName, 
             String userPass, 
             String subject, 
             String text) {
         this.smtpHost = smtpHost;
         this.fromAddr = fromAddr;
-        this.toAddr = toAddr;
+        this.toAddrs = toAddr;
         this.File = file;
         this.fileName = fileName;
         this.userName = userName;
@@ -60,8 +60,11 @@ public class SendMail {
         try {
             //加载发件人地址
             message.setFrom(new InternetAddress(fromAddr));
-            //加载收件人地址
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress(toAddr));
+            // 遍历存储多个收件人地址的数组
+            for (String toAddr : toAddrs) {
+                // 添加收件人。调用字符串的trim()方法可以去除字符串左右两边的空格
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(toAddr.trim()));
+            }
             //加载标题
             message.setSubject(subject);
             // 向multipart对象中添加邮件的各个部分内容，包括文本内容和附件
@@ -71,13 +74,15 @@ public class SendMail {
             contentPart.setText(text);
             multipart.addBodyPart(contentPart);
             //添加附件
-            if(!(File.equalsIgnoreCase("") || File.equalsIgnoreCase(null))){
-                BodyPart messageBodyPart = new MimeBodyPart();
-                DataSource source = new FileDataSource(File);
-                messageBodyPart.setDataHandler(new DataHandler(source));//添加附件的内容
-                // 添加附件的标题，使用MimeUtility.encodeText()解决中文乱码问题。
-                messageBodyPart.setFileName(MimeUtility.encodeText(fileName));
-                multipart.addBodyPart(messageBodyPart);
+            if(File.length != 0){
+                for (int i = 0; i < File.length; i++) {
+                    BodyPart messageBodyPart = new MimeBodyPart();
+                    DataSource source = new FileDataSource(File[i]);
+                    messageBodyPart.setDataHandler(new DataHandler(source));//添加附件的内容
+                    // 添加附件的标题，使用MimeUtility.encodeText()解决中文乱码问题。
+                    messageBodyPart.setFileName(MimeUtility.encodeText(fileName[i]));
+                    multipart.addBodyPart(messageBodyPart);
+                }
             }
             message.setContent(multipart);//将multipart对象放到message中
             message.saveChanges();//保存邮件

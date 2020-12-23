@@ -1,6 +1,12 @@
 
 package cn.edu.ldu;
 
+import java.util.Properties;
+import javax.mail.AuthenticationFailedException;
+import javax.mail.Folder;
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Store;
 import javax.swing.JOptionPane;
 
 /**
@@ -134,22 +140,59 @@ public class LoginUI extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
-        // TODO add your handling code here:
-        
+        // 获取文本框输入内容
         userAddr=txtUserName.getText();
         userPass=txtUserPass.getText();
         smtpAddr=txtSMTPaddr.getText();
         pop3Addr=txtPOP3addr.getText();
+        
+        // 验证输入内容是否为空
         if(userAddr.equalsIgnoreCase("") || userPass.equalsIgnoreCase("") || 
                 smtpAddr.equalsIgnoreCase("") || pop3Addr.equalsIgnoreCase("")
                 ||userAddr.equalsIgnoreCase(null) || userPass.equalsIgnoreCase(null) || 
-                smtpAddr.equalsIgnoreCase(null) || pop3Addr.equalsIgnoreCase(null))
+                smtpAddr.equalsIgnoreCase(null) || pop3Addr.equalsIgnoreCase(null)) {
+            // 如果输入内容包含空项则弹出错误信息对话框，并结束该程序块的运行
             JOptionPane.showMessageDialog(null, "请填写完整信息", "错误提示", JOptionPane.ERROR_MESSAGE);
-        else{
-            this.dispose();
-            new MainFrame(userAddr,userPass,smtpAddr,pop3Addr).setVisible(true);
+            return;
         }
-            
+        try {
+            // 使用用户输入的内容进行收件，判断账户密码服务器地址等信息是否有效
+            // 验证账号密码与邮件服务器是否有效
+            Properties props = new Properties();
+            props.setProperty("mail.store.protocol", "pop3");
+            props.setProperty("mail.pop3.host", pop3Addr);
+            // 使用Properties对象获得Session对象
+            Session session = Session.getInstance(props);
+            // 利用Session对象获得Store对象，并连接pop3服务器
+            Store store = session.getStore();
+            store.connect(pop3Addr, userAddr, userPass);
+            // 获得邮箱内的邮件夹Folder对象，以"只读"打开
+            Folder folder = store.getFolder("inbox");
+            folder.open(Folder.READ_ONLY);
+            // 获得邮件夹Folder内的所有邮件Message对象
+            Message[] messages = folder.getMessages();
+        } 
+        // 捕获验证不通过异常
+        catch (AuthenticationFailedException e ) {
+            // 打印异常信息
+            e.printStackTrace();
+            // 弹出错误提示对话框，并结束该程序块的运行
+            JOptionPane.showMessageDialog(null, "账号密码或SMTP服务器地址有误", "错误提示", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // 捕获其他类型的异常
+        catch (Exception e) {
+            // 打印异常信息
+            e.printStackTrace();
+            // 弹出错误提示对话框，并结束该程序块的运行
+            JOptionPane.showMessageDialog(null, "网络连接异常或所填邮件服务器无效", "错误提示", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // 登录成功后则走到这
+        // 关闭当前窗口（登录窗口）
+        this.dispose();
+        // 打开收发件窗口
+        new MainFrame(userAddr,userPass,smtpAddr,pop3Addr).setVisible(true);
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void btnQuitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitActionPerformed

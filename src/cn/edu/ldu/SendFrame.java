@@ -15,8 +15,8 @@ public class SendFrame extends javax.swing.JFrame {
     private String smtpHost="";
     private String pop3Host="";
     private String userName="";
-    private String file="";
-    private String fileName="";
+    private String[] files=new String[0];
+    private String[] fileNames=new String[0];
     
     
     public SendFrame(String userAddr, String userPass, String smtpHost, String pop3Host) {
@@ -153,10 +153,13 @@ public class SendFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_txtSubjectActionPerformed
 
     private void btnSendMailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendMailActionPerformed
-        // TODO add your handling code here:
         //发送邮件
-       SendMail sm = new SendMail(smtpHost,userAddr,this.txtToAddr.getText(),
-               file,fileName,userName,userPass,
+        
+        // 将输入框中输入的多个邮件地址以逗号拆分开，并存入数组
+       String[] addresses = this.txtToAddr.getText().split(",");
+       
+       SendMail sm = new SendMail(smtpHost,userAddr, addresses,
+               files,fileNames,userName,userPass,
                this.txtSubject.getText(),this.txtDataArea.getText());
        int r=sm.Send();
        if(r==1)
@@ -170,17 +173,31 @@ public class SendFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnSendMailActionPerformed
 
     private void btnFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFileActionPerformed
-        // TODO add your handling code here:
         JFileChooser fileChooser=new JFileChooser();
+        
+        // 为文件选择器开启可多选
+        fileChooser.setMultiSelectionEnabled(true);
+        
         fileChooser.setDialogTitle("选择发送文件");
         fileChooser.setApproveButtonText("确定");
         int choice=fileChooser.showOpenDialog(this); //显示对话框
         if (choice==JFileChooser.APPROVE_OPTION) { //点击选择按钮
-            //获取文件对象
-            File f=fileChooser.getSelectedFile();
-            fileName=fileChooser.getName(f);
-            this.txtFilename.setText(fileName);
-            file=f.getAbsolutePath();
+            // 获取文件选择器的多个文件
+            File[] fs = fileChooser.getSelectedFiles();
+            
+            // 初始化数组
+            files = new String[fs.length];
+            fileNames = new String[fs.length];
+            String displayFileNames = "";   // 用于显示附件名称
+            
+            // 将附件的路径和文件名添加进数组中
+            for (int i = 0; i < fs.length; i++) {
+                files[i] = fs[i].getAbsolutePath();
+                fileNames[i] = fs[i].getName();
+                displayFileNames += fs[i].getName() + ",";
+            }
+            // 设置附件名称文本框的内容
+            this.txtFilename.setText(displayFileNames);
        }
     }//GEN-LAST:event_btnFileActionPerformed
 
